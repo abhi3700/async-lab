@@ -1,0 +1,21 @@
+---
+title: "02 — State machines and Pin"
+description: "The state stored across await points and why polling uses Pin."
+---
+
+**Status:** Planned
+
+## Outcome
+
+See `async` code as a compiler-generated state machine rather than hidden control flow.
+
+## Build
+
+Translate a small async function into an explicit enum-like state machine, then explore immovability
+with stack pinning and `Box::pin`.
+
+## Evidence of completion
+
+Identify values held across suspension and explain why a future may become invalid if moved after it
+has formed internal references.
+

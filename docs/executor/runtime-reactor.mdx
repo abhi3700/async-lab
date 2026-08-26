@@ -1,0 +1,25 @@
+---
+title: "05 — Runtime and reactor"
+description: "The bridge from an executor to timers and readiness-based I/O."
+---
+
+**Status:** Planned
+
+## Outcome
+
+Separate running futures from detecting that I/O or timers can make progress.
+
+## Architecture
+
+```text
+Runtime
+├── Executor / scheduler → runnable tasks
+├── I/O reactor         → socket readiness
+└── Timer driver        → expired deadlines
+```
+
+## Evidence of completion
+
+Trace a pending socket read from waker registration through the OS event mechanism and back onto an
+executor's ready queue.
+

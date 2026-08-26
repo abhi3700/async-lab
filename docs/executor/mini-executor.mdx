@@ -1,0 +1,20 @@
+---
+title: "04 — Mini executor"
+description: "Tasks, spawning, ready queues, polling, and completion."
+---
+
+**Status:** Planned
+
+## Outcome
+
+Build an executor that exposes the relationship between a future, task, waker, and ready queue.
+
+## Build
+
+Implement `Task`, `Spawner`, and `Executor`, then run multiple futures whose wake-ups place their tasks
+back on the queue.
+
+## Evidence of completion
+
+Explain every ownership edge and show why pending tasks sleep until a wake-up makes them runnable.
+

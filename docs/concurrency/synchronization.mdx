@@ -1,0 +1,20 @@
+---
+title: "09 — Synchronization"
+description: "Mutexes, read/write locks, semaphores, notifications, and barriers."
+---
+
+**Status:** Planned
+
+## Outcome
+
+Choose a primitive based on what must be coordinated and whether the protected operation awaits.
+
+## Experiment
+
+Compare a standard mutex, an async mutex, and message-passing ownership under controlled contention.
+
+## Evidence of completion
+
+Explain why async code does not automatically require an async mutex and identify guards that must
+not cross an `.await` point.
+

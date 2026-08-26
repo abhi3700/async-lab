@@ -1,0 +1,21 @@
+---
+title: "10 — Async I/O"
+description: "Readiness, buffers, framing, partial operations, TCP, and UDP."
+---
+
+**Status:** Planned
+
+## Outcome
+
+Connect high-level async reads and writes to readiness and waker registration.
+
+## Build
+
+Implement a small framed server that handles partial reads and writes, owns its buffers explicitly,
+and applies a clear socket-splitting strategy.
+
+## Evidence of completion
+
+Trace a read from application code to the OS event system and back, including what happens when the
+socket is not ready.
+

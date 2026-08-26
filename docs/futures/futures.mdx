@@ -1,0 +1,21 @@
+---
+title: "01 — Futures"
+description: "Lazy computation through Future, Poll, Context, and await."
+---
+
+**Status:** Planned
+
+## Outcome
+
+Understand a future as a value that must be polled to make progress.
+
+## Build
+
+Implement and manually drive a countdown future that returns `Pending` a known number of times before
+returning `Ready`. Contrast useful notification-driven polling with a busy loop.
+
+## Evidence of completion
+
+Explain who calls `poll`, why futures are lazy, what `.await` does at a suspension point, and why
+`Pending` alone is insufficient for efficient progress.
+

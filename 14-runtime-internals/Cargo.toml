@@ -1,0 +1,12 @@
+[package]
+name = "async-lab-14-runtime-internals"
+description = "Guided study of async runtime implementation internals"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+
+[lints]
+workspace = true

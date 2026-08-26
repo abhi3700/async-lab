@@ -1,0 +1,20 @@
+---
+title: "06 — Tokio runtime"
+description: "Current-thread and multi-thread Tokio runtime construction."
+---
+
+**Status:** Planned
+
+## Outcome
+
+Map Tokio's runtime APIs onto the executor, scheduler, I/O driver, timer driver, and blocking pool.
+
+## Build
+
+Expand the `#[tokio::main]` mental model into explicit runtime construction. Compare current-thread
+and multi-thread builders under the same observable workload.
+
+## Evidence of completion
+
+Choose a runtime shape and driver configuration from workload constraints rather than defaults alone.
+

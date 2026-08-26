@@ -1,0 +1,21 @@
+---
+title: "12 — Scheduling"
+description: "Cooperation, fairness, task budgets, worker queues, and work stealing."
+---
+
+**Status:** Planned
+
+## Outcome
+
+Reason about when a runnable task gets CPU time and how one task can delay another.
+
+## Experiment
+
+Observe a non-yielding task, explicit yielding, blocking work, and offloaded CPU work under both Tokio
+schedulers.
+
+## Evidence of completion
+
+Trace work through local and global queues, explain stealing and the LIFO optimization, and diagnose
+starvation without confusing it with deadlock.
+

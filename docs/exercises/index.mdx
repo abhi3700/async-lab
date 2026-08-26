@@ -1,0 +1,34 @@
+---
+title: "Exercise progression"
+description: "A shared difficulty and reasoning model for Async Lab exercises."
+---
+
+Each lesson should exercise more than API recall.
+
+## A — Observe
+
+Run or trace an existing program. Record poll counts, scheduling order, thread identity, queue length,
+or another concrete observation.
+
+## B — Implement
+
+Build the core mechanism from a narrow contract and a small test.
+
+## C — Break it
+
+Make one deliberate mistake such as omitting a wake-up, blocking a worker, using an unbounded queue,
+or holding the wrong guard across an await point. Predict the symptom before running it.
+
+## D — Debug it
+
+Diagnose a supplied failure from evidence. Explain both the root cause and why the fix restores the
+relevant contract.
+
+## E — Extend it
+
+Add a constraint or feature without losing the earlier guarantees.
+
+## F — Architecture reasoning
+
+Explain ownership, wake-up, scheduling, cancellation, and resource behavior without executing code.
+

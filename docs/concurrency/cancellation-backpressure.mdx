@@ -1,0 +1,21 @@
+---
+title: "11 — Cancellation and backpressure"
+description: "Bounded work, timeouts, shutdown, and cleanup."
+---
+
+**Status:** Planned
+
+## Outcome
+
+Keep producers, consumers, and shutdown paths within explicit resource bounds.
+
+## Build
+
+Combine bounded channels, a semaphore, timeouts, selection, and a cancellation token in a small
+pipeline with graceful shutdown.
+
+## Evidence of completion
+
+Explain what is dropped, what cleanup still runs, how in-flight work terminates, and what limits queue
+growth when the producer is faster than the consumer.
+

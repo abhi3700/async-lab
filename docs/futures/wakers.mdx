@@ -1,0 +1,21 @@
+---
+title: "03 — Wakers"
+description: "How pending work tells an executor it can make progress."
+---
+
+**Status:** Planned
+
+## Outcome
+
+Connect external progress to a future's next poll.
+
+## Build
+
+Create a timer future, count polls, intentionally omit its wake-up, and handle a replacement waker
+between polls.
+
+## Evidence of completion
+
+Trace an event from occurrence through `wake` or `wake_by_ref`, into a ready queue, and back to
+`Future::poll`.
+

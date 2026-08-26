@@ -1,0 +1,21 @@
+---
+title: "07 — Tasks and concurrency"
+description: "Spawning, joining, selecting, yielding, and local tasks."
+---
+
+**Status:** Planned
+
+## Outcome
+
+Compose task lifecycles while understanding their ownership and scheduling constraints.
+
+## Topics
+
+`spawn`, `JoinHandle`, `JoinSet`, `join!`, `try_join!`, `select!`, unordered futures, `yield_now`,
+`spawn_local`, and `LocalSet`.
+
+## Evidence of completion
+
+Diagnose `Send`, `'static`, and `!Send` failures and explain whether work is concurrent, parallel, or
+merely interleaved.
+

@@ -1,0 +1,21 @@
+---
+title: "14 — Runtime internals"
+description: "Guided source reading of Tokio's scheduler and drivers."
+---
+
+**Status:** Planned
+
+## Outcome
+
+Read runtime implementation code without treating it as a black box.
+
+## Method
+
+Pin every source-reading lesson to an upstream revision. Begin at a public operation, follow the owned
+data and state transitions, and confirm the path with a focused experiment before generalizing.
+
+## Evidence of completion
+
+Trace spawning, enqueueing, polling, waking, stealing, and shutdown through concrete runtime types and
+identify which details are API contracts versus implementation choices.
+

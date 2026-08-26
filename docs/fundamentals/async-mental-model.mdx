@@ -1,0 +1,23 @@
+---
+title: "00 — Async mental model"
+description: "Future, task, thread, executor, scheduler, reactor, and runtime."
+---
+
+**Status:** Planned
+
+## Outcome
+
+Build the vocabulary that every later implementation will use.
+
+## Concepts
+
+- `Future ≠ Task ≠ Thread`
+- `Executor ≠ Scheduler ≠ Reactor ≠ Runtime`
+- `Concurrency ≠ Parallelism`
+- `.await ≠ blocking`
+
+## Evidence of completion
+
+Given a small async program, identify the stored computation, schedulable unit, execution threads,
+source of readiness, and component responsible for each transition.
+

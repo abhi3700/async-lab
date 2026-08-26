@@ -1,0 +1,37 @@
+---
+title: "Async Lab"
+description: "Learn async Rust from Future and Poll through runtime internals."
+---
+
+Async Lab is a code-first course about the machinery beneath asynchronous Rust. We begin with the
+language-level contract, build a small executor, add the reactor/runtime model, and only then use
+Tokio.
+
+## The path
+
+```text
+Future → State machine → Poll → Waker → Task → Executor
+       → Scheduler → Reactor → Runtime → Tokio
+```
+
+By the end, you should be able to inspect unfamiliar async code and reason about where a task is,
+what can wake it, which resource limits it, and how the runtime schedules it.
+
+## How to use the lab
+
+Work through chapters in numerical order. Each chapter's Rust crate holds its implementations,
+experiments, and tests. This site holds the corresponding mental model, architecture, walkthrough,
+mistakes, and exercises.
+
+The repository is currently a curriculum scaffold. A page marked **Planned** defines the boundary
+of future work; it does not claim the lesson is implemented.
+
+## Definition of done
+
+A lesson is complete only when:
+
+- its minimal implementation and experiments run;
+- deliberate failure cases are captured and explained;
+- exercises cover observation, implementation, debugging, and extension;
+- the code and this documentation describe the same behavior.
+

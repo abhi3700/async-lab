@@ -1,0 +1,51 @@
+---
+title: "Lesson format"
+description: "The required structure for every Async Lab lesson."
+---
+
+Use this sequence for each lesson so theory, implementation, and debugging reinforce one another.
+
+## 1. Mental model
+
+State the one idea the learner should carry forward. Define the actors and distinguish nearby terms.
+
+## 2. Architecture
+
+Draw the data and control flow. Label ownership, queues, threads, wake-up paths, and resource bounds.
+
+## 3. Core theory
+
+Introduce only the language or runtime contracts needed to explain the model.
+
+## 4. Minimal implementation
+
+Expose the mechanism with the smallest dependency-light implementation. Chapters before Tokio should
+not use Tokio to hide the mechanism being learned.
+
+## 5. Tokio implementation
+
+When applicable, reproduce the idea with Tokio and map each API back to the earlier model.
+
+## 6. Internal trace
+
+Trace one operation from the caller through polling, scheduling, readiness, and completion.
+
+## 7. Common mistakes
+
+Include symptoms, root causes, and the observation that separates each failure from similar ones.
+
+## 8. Experiment
+
+Change one variable and record the predicted and observed result. Prefer poll counts, task states,
+queue capacity, timings, or traces over unstructured output.
+
+## 9. Exercises
+
+Use the shared [exercise progression](/exercises): Observe, Implement, Break it, Debug it, Extend it,
+and Architecture reasoning.
+
+## 10. Documentation update
+
+Link runnable files and keep diagrams and explanations synchronized with the code. Mark planned or
+unverified behavior honestly.
+

@@ -1,0 +1,32 @@
+---
+title: "16 — Async event runtime"
+description: "The capstone event ingestion, routing, supervision, and metrics system."
+---
+
+**Status:** Planned
+
+## Target architecture
+
+```text
+TCP / WebSocket source
+        ↓
+     Decoder
+        ↓
+  Bounded router
+    ↙   ↓   ↘
+Worker Worker Worker
+        ↓
+Tracing + metrics + benchmarks
+```
+
+## Required capabilities
+
+- bounded channels and explicit backpressure;
+- actor-like workers and task supervision;
+- graceful cancellation, retry policy, and concurrency limits;
+- CPU-heavy work offloading;
+- tracing, metrics, tests, and benchmarks.
+
+The capstone is complete only when failure and shutdown paths receive the same attention as the happy
+path.
+
