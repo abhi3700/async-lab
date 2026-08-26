@@ -1,0 +1,106 @@
+---
+title: "Lesson 0 solutions"
+description: "Reasoned solutions for the async mental-model exercises."
+---
+
+Compare causal reasoning rather than exact wording. If you have not attempted the
+[worksheet](/exercises/00-async-mental-model), stop here first.
+
+## 0.1 — Classify the actors
+
+1. **Future** — the value representing a computation.
+2. **Task** — the spawned, schedulable unit owning or containing a future.
+3. **OS thread** — the kernel-managed resource executing instructions.
+4. **Executor** — polls runnable futures.
+5. **Scheduler** — chooses which runnable task runs, when, and where.
+6. **Reactor** — observes readiness from external event sources.
+7. **Runtime** — combines execution, scheduling, and I/O/time drivers.
+
+An `async fn` call creates a future. Spawning creates a task around it. An OS thread can execute parts
+of many tasks over its lifetime. Executor and scheduler machinery may be combined in an
+implementation, but polling and selection are distinct responsibilities.
+
+## 0.2 — Trace one socket read
+
+```text
+B → E → G → D → A → F → C
+```
+
+The application creates the lazy future. The spawner/runtime makes it a task. The scheduler selects
+it and the executor polls it. The future finds the read unready, registers the waker, and returns
+`Pending`. The reactor later sees readiness; the waker makes the task runnable; the scheduler and
+executor arrange another poll.
+
+Between `D` and `F`, the task needs no thread. Its previous worker can poll other runnable tasks.
+
+## 0.3 — Concurrency or parallelism?
+
+1. **Concurrent, not parallel:** lifetimes overlap, but one worker executes one task at a time.
+2. **Concurrent and parallel:** lifetimes overlap and two threads execute simultaneously.
+3. **Neither:** the operations do not overlap.
+4. **Concurrent, not parallel:** one worker interleaves progress among tasks that mostly wait without
+   occupying it.
+5. **Concurrent lifetimes without fair progress; not parallel:** both tasks exist, but blocking the
+   only worker prevents the second from running.
+
+Many tasks can share one thread because pending tasks relinquish it. The worker is reused for the next
+runnable task.
+
+## 0.4 — Debug the frozen ticker
+
+`slow_task` blocks the runtime's only OS worker inside `std::thread::sleep`. A poll is ordinary
+synchronous execution, so the executor cannot regain control until that call returns. The ticker's
+`.await` is helpful: its pending timer lets the task yield.
+
+Extra runtime workers may hide this instance of the stall, but each blocking call still consumes an
+async worker and can exhaust the pool under load. Use a non-blocking runtime timer when the duration
+is waiting. Move unavoidable blocking or CPU-heavy work to a dedicated blocking or CPU-oriented pool
+and await its result.
+
+## 0.5 — Extend a one-worker service
+
+```text
+Runtime
+├── Reactor → watches timer and socket readiness
+├── Scheduler / runnable queue
+└── Executor on one OS worker thread
+    └── polls each runnable Task
+        └── owns a connection Future
+```
+
+One worker supports many connections because pending connection futures do not occupy it. Readiness
+triggers each registered waker, returning the associated task to the runnable queue. A 500 ms
+uninterrupted parse monopolizes the only worker, delaying timers and all other connection tasks.
+
+Move parsing to a bounded CPU-oriented worker pool. Await the result and bound submissions so the new
+queue cannot grow without limit.
+
+## 0.6 — Correct the mental model
+
+1. Calling an async function returns a lazy future; its body runs when polled.
+2. Tasks are schedulable units, not threads. Many tasks can share a thread.
+3. `Pending` means the future cannot progress now and must arrange a wake-up before another useful
+   poll. Continuous polling would be a busy loop.
+4. The reactor observes readiness and triggers the wake-up path. The scheduler and executor later
+   arrange the future's next poll.
+5. `.await` suspends the surrounding future when the awaited future is pending, allowing the worker
+   to run something else. Synchronous work between await points can still block a worker.
+6. A multi-thread runtime permits parallel task execution but does not guarantee it; readiness,
+   worker count, task behavior, and scheduling decide what actually runs.
+
+The final trace is:
+
+```text
+socket becomes readable
+        ↓
+reactor observes readiness
+        ↓
+waker marks/enqueues the task
+        ↓
+runnable queue
+        ↓
+scheduler selects it; executor dispatches it on a worker
+        ↓
+poll(future)
+```
+

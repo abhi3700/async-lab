@@ -67,7 +67,14 @@
       {
         "group": "Exercises",
         "pages": [
-          "exercises/index"
+          "exercises/index",
+          "exercises/00-async-mental-model"
+        ]
+      },
+      {
+        "group": "Solutions",
+        "pages": [
+          "solutions/00-async-mental-model"
         ]
       }
     ]

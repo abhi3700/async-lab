@@ -1,0 +1,111 @@
+---
+title: "Lesson 0 exercises"
+description: "Reason about futures, tasks, threads, runtime actors, and async progress."
+---
+
+Write down your reasoning before checking the [solution guide](/solutions/00-async-mental-model). For
+each answer, identify **who owns the work**, **what causes progress**, and **whether an OS thread is
+occupied**.
+
+## 0.1 — Classify the actors
+
+Use each term exactly once:
+
+```text
+Future   Task   OS thread   Executor   Scheduler   Reactor   Runtime
+```
+
+Match them to:
+
+1. A value representing a computation that may eventually produce an output.
+2. A spawned, schedulable unit that owns or contains a future.
+3. A kernel-managed execution resource on which machine instructions run.
+4. The component that calls `poll` on runnable futures.
+5. The policy and machinery deciding which runnable task executes, when, and on which worker.
+6. The component watching timers, sockets, and other external events for readiness.
+7. The complete environment bundling task execution, scheduling, and I/O/time drivers.
+
+Which is created by calling an `async fn`? Which is created by spawning? Which can execute parts of
+many tasks over its lifetime?
+
+## 0.2 — Trace one socket read
+
+Put these events in causal order:
+
+```text
+A. The reactor reports that the socket is readable.
+B. Calling the async function returns a future; its body has not run yet.
+C. A worker polls the task's future again, and the read completes.
+D. The read is not ready, so it registers a waker and returns Pending.
+E. Spawning wraps the future in a task and places it on a runnable queue.
+F. The task's waker marks or enqueues the task as runnable.
+G. A worker takes the task and polls its future for the first time.
+```
+
+Name the responsible actor for each transition. Identify when the task is waiting while its former
+worker remains free to run other tasks.
+
+## 0.3 — Concurrency or parallelism?
+
+For every scenario, answer **concurrent?**, **parallel?**, and why.
+
+1. Two tasks alternate at `.await` points on one current-thread runtime.
+2. Two CPU-heavy functions execute at the same instant on two OS threads.
+3. Operation B is not created until operation A has completely finished.
+4. One worker manages 100 socket tasks, most of which are waiting for readiness.
+5. Two tasks exist on one worker, but the first blocks it for five seconds before the second runs.
+
+Why do 100 concurrent tasks not imply 100 threads?
+
+## 0.4 — Debug the frozen ticker
+
+Assume this pseudocode runs on a current-thread async runtime:
+
+```rust
+async fn slow_task() {
+	println!("slow: start");
+	std::thread::sleep(Duration::from_secs(3));
+	println!("slow: done");
+}
+
+async fn ticker() {
+	loop {
+		runtime_sleep(Duration::from_millis(100)).await;
+		println!("tick");
+	}
+}
+
+join(slow_task(), ticker()).await;
+```
+
+Explain which task causes the stall, what resource is blocked, why the ticker cannot be polled, and
+whether its `.await` is at fault. Would more runtime workers fix the design or only hide the symptom?
+Give one fix for waiting and one for unavoidable blocking or CPU-heavy work.
+
+## 0.5 — Extend a one-worker service
+
+Design a service with one runtime worker, a one-second timer, 1,000 mostly-idle TCP connections, one
+task per connection, and a reactor watching timers and sockets. Use all seven terms from Exercise
+0.1.
+
+Explain how one worker supports the connections, what returns a waiting connection to the runnable
+queue, and what happens if one connection performs 500 ms of uninterrupted CPU parsing. Where should
+that parsing move, and how should the new boundary be bounded?
+
+## 0.6 — Correct the mental model
+
+Rewrite each statement accurately:
+
+1. “Calling an async function starts it in the background.”
+2. “Every task has its own thread.”
+3. “When a future returns `Pending`, the executor keeps polling it in a loop.”
+4. “The reactor runs the future when a socket becomes readable.”
+5. “`.await` blocks until the value is ready.”
+6. “A multi-thread runtime makes every task run in parallel.”
+
+Finally, fill the path from memory:
+
+```text
+socket becomes readable → ? → ? → runnable queue → ? → poll(future)
+```
+
