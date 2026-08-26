@@ -7,6 +7,15 @@ Write down your reasoning before checking the [solution guide](/solutions/00-asy
 each answer, identify **who owns the work**, **what causes progress**, and **whether an OS thread is
 occupied**.
 
+## Auto-checked Rust drills
+
+Exercises 0.1–0.3 have Rust starter files in `00-async-mental-model/exercises/`. Run `cargo run` from
+the repository root to check and watch the next incomplete file. Each starter has a dedicated
+behavioral checker, an optional hint, and a separate reference implementation.
+
+Exercises 0.4–0.6 remain written exercises because the quality of the explanation is part of the
+answer. See the [exercise runner guide](/contributing/exercise-runner) for commands and file layout.
+
 ## 0.1 — Classify the actors
 
 Use each term exactly once:
@@ -108,4 +117,3 @@ Finally, fill the path from memory:
 ```text
 socket becomes readable → ? → ? → runnable queue → ? → poll(future)
 ```
-

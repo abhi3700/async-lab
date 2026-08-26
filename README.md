@@ -83,6 +83,45 @@ reasoning**.
 See the [lesson template](docs/contributing/lesson-format.mdx) and
 [exercise template](docs/exercises/index.mdx) before adding lesson content.
 
+## Exercise runner
+
+Async Lab includes a rustlings-like CLI powered by the `spinners` crate. Run it from the repository
+root:
+
+```bash
+cargo run
+```
+
+It finds the next incomplete Rust exercise, checks it immediately, and watches that source file every
+200 ms. After a saved change it compiles and runs the exercise's dedicated behavioral tests. A failed
+check prints its compiler/test output and an optional hint; a passing check is recorded locally and
+the watcher advances to the next exercise. Interactive terminals show colorful status labels and an
+`Aesthetic` spinner while compilation and tests run. Hints use a prominent `💡 HINT` heading and
+render Markdown emphasis as terminal styling. Redirected output stays plain, and the standard
+`NO_COLOR` environment variable disables colors explicitly.
+
+```bash
+cargo run -- list
+cargo run -- check 00_01_classify_actors
+cargo run -- hint 00_01_classify_actors
+```
+
+Progress is stored in the ignored `.async-lab/progress.tsv` file. The fingerprint includes both the
+starter source and its checker, so editing a completed exercise or changing its tests makes it
+incomplete again.
+
+The runner accepts any implementation that passes the behavioral checker. It does not compare source
+text with the reference answer. Written worksheets and solutions remain separate, and auto-checked
+Rust exercises follow the same rule:
+
+```text
+NN-chapter/
+├── exercises/<name>.rs   # learner-owned starter
+├── checks/<name>.rs      # behavioral tests
+├── hints/<name>.md       # optional, shown after failure
+└── solutions/<name>.rs   # reference implementation
+```
+
 ## Repository layout
 
 ```text

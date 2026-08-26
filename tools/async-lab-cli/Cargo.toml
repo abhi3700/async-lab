@@ -1,0 +1,19 @@
+[package]
+name = "async-lab-cli"
+description = "A rustlings-like exercise watcher for Async Lab"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false
+
+[[bin]]
+name = "async-lab"
+path = "src/main.rs"
+
+[dependencies]
+spinners = "4.2.0"
+
+[lints]
+workspace = true

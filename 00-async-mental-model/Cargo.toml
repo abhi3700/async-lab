@@ -8,5 +8,23 @@ repository.workspace = true
 rust-version.workspace = true
 publish = false
 
+[[bin]]
+name = "exercise-00-01-classify-actors"
+path = "exercises/00_01_classify_actors.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "exercise-00-02-socket-read-trace"
+path = "exercises/00_02_socket_read_trace.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "exercise-00-03-concurrency-or-parallelism"
+path = "exercises/00_03_concurrency_or_parallelism.rs"
+test = false
+bench = false
+
 [lints]
 workspace = true

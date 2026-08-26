@@ -3,6 +3,9 @@
 Read this only after attempting [`exercises.md`](exercises.md). Equivalent wording is fine; compare the
 responsibility and causal chain, not just the vocabulary.
 
+The auto-checked Rust reference implementations are in [`solutions/`](solutions). They are separate
+from both the starter files and this written solution guide.
+
 ## 0.1 — Classify the actors
 
 1. **Future** — a value representing a computation that may eventually produce an output.
@@ -131,4 +134,3 @@ scheduler selects the task and executor dispatches it on a worker
         ↓
 poll(future)
 ```
-

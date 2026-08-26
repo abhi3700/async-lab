@@ -5,6 +5,22 @@ state **who owns the work**, **what causes progress**, and **whether an OS threa
 
 Do not open [`solution.md`](solution.md) until you have attempted all six exercises.
 
+## Auto-checked Rust drills
+
+Exercises 0.1–0.3 also have small Rust versions under [`exercises/`](exercises). From the repository
+root, run:
+
+```bash
+cargo run
+```
+
+The CLI checks the next incomplete file immediately, watches it for saved changes, prints a hint after
+a failed check, and advances when the behavioral tests pass. Reference implementations live under
+[`solutions/`](solutions); keep them closed until you finish your attempt.
+
+Exercises 0.4–0.6 remain written reasoning exercises because their explanations matter more than one
+machine-checkable answer.
+
 ## 0.1 — Classify the actors
 
 Use each term exactly once:
@@ -147,4 +163,3 @@ socket becomes readable → ? → ? → runnable queue → ? → poll(future)
 
 You are ready for Lesson 1 when you can explain the socket-read trace without using “async magic” as
 a step and without assigning the same responsibility to the future, task, thread, and runtime.
-

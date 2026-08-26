@@ -1,0 +1,55 @@
+---
+title: "Exercise runner"
+description: "Use and extend Async Lab's rustlings-like file watcher."
+---
+
+Run the exercise watcher from the repository root:
+
+```bash
+cargo run
+```
+
+The runner checks the next incomplete Rust exercise immediately. If it fails, it prints the compiler
+or test output followed by an optional hint. It then watches that source file every 200 ms and checks
+again after its content changes. A passing exercise is recorded and the runner advances
+automatically.
+
+Interactive terminals use colorful status labels and the `spinners` crate's `Aesthetic` animation
+while `rustc` and the test binary run. Failure output is separated into a checker-output block, while
+hints appear under an uppercase `💡 HINT` heading. Simple Markdown emphasis inside hints is rendered
+as terminal styling instead of literal markers.
+
+The spinner is automatically disabled when output is redirected or the terminal is unsuitable. Set
+the standard `NO_COLOR` environment variable to disable ANSI colors explicitly.
+
+## Commands
+
+```bash
+cargo run                         # watch the next incomplete exercise
+cargo run -- list                 # show ordered completion status
+cargo run -- check [NAME]         # check one or the next incomplete exercise
+cargo run -- hint [NAME]          # show a hint without running the checker
+```
+
+Completion lives locally in the ignored `.async-lab/progress.tsv` file. The stored fingerprint covers
+both the learner source and its checker. Changing either invalidates the old completion result.
+
+## File convention
+
+```text
+NN-chapter/
+├── exercises/<name>.rs
+├── checks/<name>.rs
+├── hints/<name>.md
+└── solutions/<name>.rs
+```
+
+The first two filename characters identify the chapter and lexical paths define exercise order. A
+checker and reference solution are mandatory; a hint is optional.
+
+Each learner starter is also declared as an explicit `[[bin]]` target in its chapter's `Cargo.toml`.
+The declaration lets rust-analyzer provide full diagnostics and navigation even though the file lives
+outside `src/`. The CLI still performs grading through the separate checker.
+
+Checkers validate behavior rather than source text, so alternative correct implementations pass. The
+CLI never copies or automatically displays the reference solution.
