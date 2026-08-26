@@ -17,17 +17,7 @@ pub enum Event {
 }
 
 pub fn causal_order() -> [Event; 7] {
-	// todo!("return the seven socket-read events in causal order")
-	use Event as E;
-	[
-		E::AsyncFunctionCalled,
-		E::FutureSpawnedAsTask,
-		E::FirstPoll,
-		E::ReadReturnsPending,
-		E::ReactorObservesReadiness,
-		E::WakerMakesTaskRunnable,
-		E::SecondPollCompletesRead,
-	]
+	todo!("return the seven socket-read events in causal order")
 }
 
 fn main() {
