@@ -1,0 +1,24 @@
+# Rust sources and generated build artifacts are not documentation pages
+
+# All numbered lesson crates: 00-*through 16-*
+
+/[0-9][0-9]-*/
+
+/tools/
+/crates/
+/target/
+
+# Repository metadata and development configuration
+
+/.git/
+/.github/
+/.agents/
+/.codex/
+/Cargo.lock
+/Cargo.toml
+/rust-toolchain.toml
+/rustfmt.toml
+/doc.sh
+/LICENSE
+/res/
+/README.md

@@ -1,0 +1,83 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "mint",
+  "name": "Async Lab",
+  "description": "From Rust futures to runtime internals",
+  "colors": {
+    "primary": "#F06431",
+    "light": "#F47A4D",
+    "dark": "#D94E1F"
+  },
+  "navigation": {
+    "groups": [
+      {
+        "group": "Start here",
+        "pages": [
+          "docs/index",
+          "docs/contributing/lesson-format",
+          "docs/contributing/exercise-runner"
+        ]
+      },
+      {
+        "group": "Fundamentals",
+        "pages": [
+          "docs/fundamentals/async-mental-model"
+        ]
+      },
+      {
+        "group": "Futures",
+        "pages": [
+          "docs/futures/futures",
+          "docs/futures/state-machines-pin",
+          "docs/futures/wakers"
+        ]
+      },
+      {
+        "group": "Executor and runtime",
+        "pages": [
+          "docs/executor/mini-executor",
+          "docs/executor/runtime-reactor",
+          "docs/tokio/runtime"
+        ]
+      },
+      {
+        "group": "Concurrency",
+        "pages": [
+          "docs/concurrency/tasks-concurrency",
+          "docs/concurrency/channels",
+          "docs/concurrency/synchronization",
+          "docs/concurrency/cancellation-backpressure"
+        ]
+      },
+      {
+        "group": "I/O and scheduling",
+        "pages": [
+          "docs/io/async-io",
+          "docs/scheduling/scheduling"
+        ]
+      },
+      {
+        "group": "Engineering",
+        "pages": [
+          "docs/observability/testing",
+          "docs/internals/runtime-internals",
+          "docs/performance/performance",
+          "docs/capstone/async-event-runtime"
+        ]
+      },
+      {
+        "group": "Exercises",
+        "pages": [
+          "docs/exercises/index",
+          "docs/exercises/00-async-mental-model"
+        ]
+      },
+      {
+        "group": "Solutions",
+        "pages": [
+          "docs/solutions/00-async-mental-model"
+        ]
+      }
+    ]
+  }
+}

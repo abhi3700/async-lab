@@ -158,5 +158,16 @@ cargo clippy --workspace --all-targets
 cargo fmt --all --check
 ```
 
-The documentation site is configured in [`docs/docs.json`](docs/docs.json). From `docs/`, run
-`mint dev` when the Mintlify CLI is available.
+The documentation site is configured in [`docs.json`](docs.json). When the Mintlify CLI is
+available, start the local documentation preview from the repository root:
+
+```bash
+./doc.sh
+```
+
+The preview uses port `3111` by default. Override it with `MINTLIFY_PORT`, and pass additional
+Mintlify options directly to the script:
+
+```bash
+MINTLIFY_PORT=4000 ./doc.sh --no-open
+```
