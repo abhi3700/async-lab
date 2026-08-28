@@ -1,0 +1,585 @@
+---
+title: "0.4. Why the frozen ticker stalls"
+description: "Full explanation for Lesson 0 exercise 0.4."
+---
+
+This is the expanded explanation for
+[Lesson 0 solution 0.4](/docs/solutions/00-async-mental-model#04--debug-the-frozen-ticker).
+
+Consider this code running on a **current-thread async runtime**, meaning there is only one runtime worker thread:
+
+```rust
+async fn slow_task() {
+    println!("slow: start");
+    std::thread::sleep(Duration::from_secs(3));
+    println!("slow: done");
+}
+
+async fn ticker() {
+    loop {
+        runtime_sleep(Duration::from_millis(100)).await;
+        println!("tick");
+    }
+}
+
+join(slow_task(), ticker()).await;
+```
+
+The bug is in `slow_task`, not `ticker`.
+
+## The diagnosis
+
+```rust
+pub fn diagnose_frozen_ticker() -> FrozenTickerDiagnosis {
+    FrozenTickerDiagnosis {
+        culprit: TaskName::SlowTask,
+        blocked_resource: BlockedResource::RuntimeWorkerThread,
+        ticker_await_causes_stall: false,
+        more_runtime_workers_fix_design: false,
+    }
+}
+```
+
+The important question is **why**.
+
+## 1. `async fn` does not make synchronous code non-blocking
+
+This function is asynchronous:
+
+```rust
+async fn slow_task() {
+    // ...
+}
+```
+
+but this operation inside it is not:
+
+```rust
+std::thread::sleep(Duration::from_secs(3));
+```
+
+`std::thread::sleep` tells the operating system:
+
+> Stop executing this thread for three seconds.
+
+Therefore, when the runtime worker polls `slow_task`:
+
+```text
+ONE RUNTIME WORKER
+        │
+        ▼
+ poll(slow_task)
+        │
+        ▼
+ println!("slow: start")
+        │
+        ▼
+ std::thread::sleep(3s)
+        │
+        ▼
+  WORKER BLOCKED ❌
+        │
+        ├── cannot poll ticker
+        ├── cannot poll task A
+        └── cannot poll task B
+```
+
+The runtime cannot regain control of that worker until `std::thread::sleep` returns.
+
+This is why:
+
+```rust
+culprit: TaskName::SlowTask
+```
+
+and:
+
+```rust
+blocked_resource: BlockedResource::RuntimeWorkerThread
+```
+
+## 2. What changes with `tokio::time::sleep(...).await`?
+
+Now replace:
+
+```rust
+std::thread::sleep(Duration::from_secs(3));
+```
+
+with:
+
+```rust
+tokio::time::sleep(Duration::from_secs(3)).await;
+```
+
+The behavior is fundamentally different.
+
+Conceptually:
+
+```text
+worker polls slow_task
+        │
+        ▼
+tokio::time::sleep(3s).await
+        │
+        ▼
+timer isn't ready
+        │
+        ▼
+Future returns Pending
+        │
+        ▼
+slow_task is suspended
+        │
+        ▼
+WORKER AVAILABLE ✅
+        │
+        ├── poll ticker
+        ├── poll task A
+        └── poll task B
+
+       ...3 seconds...
+
+Tokio timer becomes ready
+        │
+        ▼
+wake slow_task
+        │
+        ▼
+slow_task becomes runnable
+        │
+        ▼
+worker eventually polls it again
+        │
+        ▼
+println!("slow: done")
+```
+
+The crucial distinction is:
+
+```text
+std::thread::sleep(...)
+        │
+        ▼
+THREAD WAITS
+        │
+        ▼
+worker unavailable ❌
+```
+
+versus:
+
+```text
+tokio::time::sleep(...).await
+        │
+        ▼
+TASK WAITS
+        │
+        ▼
+worker available ✅
+```
+
+A useful mental model is:
+
+> **The async task sleeps; the runtime worker does not have to sleep with it.**
+
+## 3. `.await` itself is not magic
+
+It is tempting to think:
+
+```text
+.await → worker becomes free
+```
+
+but that is slightly inaccurate.
+
+`.await` checks whether the awaited future can make progress.
+
+Conceptually:
+
+```text
+some_future.await
+       │
+       ▼
+poll(some_future)
+       │
+   ┌───┴────┐
+   │        │
+ Ready    Pending
+   │        │
+continue    │
+task        ▼
+        return control
+        to executor
+```
+
+The worker becomes available when the task ultimately yields `Pending` back to the executor.
+
+Therefore:
+
+```rust
+tokio::time::sleep(...).await
+```
+
+works because Tokio's sleep is designed as an **asynchronous future**.
+
+It does not block the worker while waiting for time to pass.
+
+## 4. But isn't `ticker` an infinite loop?
+
+Yes:
+
+```rust
+async fn ticker() {
+    loop {
+        runtime_sleep(Duration::from_millis(100)).await;
+        println!("tick");
+    }
+}
+```
+
+But an **infinite loop does not automatically mean the worker is blocked**.
+
+Every iteration reaches:
+
+```rust
+runtime_sleep(Duration::from_millis(100)).await;
+```
+
+When the timer isn't ready, the ticker yields `Pending`.
+
+Conceptually:
+
+```text
+worker polls ticker
+       │
+       ▼
+sleep(100ms).await
+       │
+       ▼
+timer isn't ready
+       │
+       ▼
+Pending
+       │
+       ▼
+ticker suspended
+       │
+       ▼
+WORKER AVAILABLE
+       │
+       ├── run task A
+       ├── run task B
+       └── run task C
+
+      ~100 ms later
+
+timer becomes ready
+       │
+       ▼
+wake ticker
+       │
+       ▼
+ticker becomes runnable
+       │
+       ▼
+worker polls ticker again
+       │
+       ▼
+println!("tick")
+       │
+       ▼
+next iteration
+       │
+       ▼
+sleep(100ms).await
+       │
+       ▼
+Pending again
+```
+
+So during approximately those 100 ms:
+
+```text
+ticker task → WAITING
+worker      → AVAILABLE
+```
+
+The worker is not necessarily **idle** for 100 ms.
+
+It is **available** for other work.
+
+If another task is runnable, the worker can execute it. If nothing is runnable, the runtime may park the worker until something wakes it.
+
+## 5. An infinite loop can still monopolize the worker
+
+Compare the ticker with this:
+
+```rust
+async fn bad_ticker() {
+    loop {
+        println!("tick");
+    }
+}
+```
+
+There is no `.await`.
+
+Once the executor starts polling this future:
+
+```text
+worker
+  │
+  ▼
+poll(bad_ticker)
+  │
+  ▼
+loop
+ ├── tick
+ ├── tick
+ ├── tick
+ ├── tick
+ ├── tick
+ ├── ...
+ └── forever
+```
+
+The call to `poll()` never gets a chance to return.
+
+Therefore:
+
+```text
+executor
+   │
+   ▼
+poll(bad_ticker)
+   │
+   │
+   │   never returns
+   │
+   ▼
+worker monopolized ❌
+```
+
+So the important question is **not**:
+
+> Is there an infinite loop?
+
+The better question is:
+
+> **Does the task regularly give control back to the executor?**
+
+This loop does:
+
+```rust
+loop {
+    tokio::time::sleep(Duration::from_millis(100)).await;
+}
+```
+
+This loop does not:
+
+```rust
+loop {
+    expensive_work();
+}
+```
+
+## 6. Why the ticker's `.await` is not at fault
+
+The ticker's:
+
+```rust
+runtime_sleep(Duration::from_millis(100)).await;
+```
+
+is actually behaving exactly as async code should.
+
+It allows:
+
+```text
+ticker
+  │
+  ▼
+can't progress yet
+  │
+  ▼
+Pending
+  │
+  ▼
+executor regains control
+  │
+  ▼
+worker can poll something else
+```
+
+Therefore:
+
+```rust
+ticker_await_causes_stall: false
+```
+
+The problem is the synchronous blocking call inside `slow_task`.
+
+## 7. Would more runtime workers fix it?
+
+Suppose instead of one worker we had multiple workers.
+
+Then something like this could happen:
+
+```text
+Worker 1                    Worker 2
+   │                           │
+   ▼                           ▼
+slow_task                   ticker
+   │                           │
+   ▼                           ▼
+thread::sleep(3s)          sleep(100ms).await
+   │                           │
+BLOCKED ❌                 AVAILABLE ✅
+```
+
+The ticker may continue working because another worker exists.
+
+But this does **not** make the design correct.
+
+Imagine four runtime workers and four tasks doing blocking operations:
+
+```text
+Worker 1 → BLOCKED
+Worker 2 → BLOCKED
+Worker 3 → BLOCKED
+Worker 4 → BLOCKED
+```
+
+Now the runtime is effectively frozen again.
+
+More workers only make the problem harder to notice.
+
+Therefore:
+
+```rust
+more_runtime_workers_fix_design: false
+```
+
+## 8. Correct remedies
+
+The appropriate solution depends on **why the work is slow**.
+
+```rust
+pub fn choose_remedy(work: SlowWork) -> Remedy {
+    match work {
+        SlowWork::WaitingForTime => {
+            Remedy::AwaitNonBlockingRuntimeOperation
+        }
+
+        SlowWork::UnavoidableBlockingOperation => {
+            Remedy::RunOnDedicatedBlockingPool
+        }
+
+        SlowWork::CpuHeavyComputation => {
+            Remedy::RunOnBoundedCpuPool
+        }
+    }
+}
+```
+
+### Waiting for time, network, socket, etc.
+
+Prefer asynchronous waiting:
+
+```rust
+tokio::time::sleep(Duration::from_secs(3)).await;
+```
+
+The task can yield while waiting.
+
+### Unavoidable blocking operation
+
+If an API genuinely blocks, move that work away from normal async workers, for example with Tokio's blocking facilities:
+
+```rust
+tokio::task::spawn_blocking(|| {
+    blocking_operation();
+})
+.await?;
+```
+
+### CPU-heavy computation
+
+CPU-heavy work does not necessarily block on I/O, but it can monopolize a runtime worker by continuously executing without yielding.
+
+Move substantial CPU work to an appropriately **bounded CPU-oriented worker pool**.
+
+## Final mental model
+
+When looking at async code, ask what the task is currently doing:
+
+```text
+                  What kind of work?
+                         │
+        ┌────────────────┼────────────────┐
+        │                │                │
+   async waiting    blocking API     CPU-heavy work
+        │                │                │
+        ▼                ▼                ▼
+      .await        blocking pool     CPU pool
+        │
+        ▼
+     Pending
+        │
+        ▼
+ task suspended
+        │
+        ▼
+worker available
+        │
+        ▼
+execute another
+runnable task
+```
+
+The most important distinction is:
+
+```text
+TASK WAITING
+    ≠
+THREAD WAITING
+```
+
+With proper asynchronous waiting:
+
+```text
+Task waiting
+    +
+Worker available
+    =
+good async concurrency ✅
+```
+
+With synchronous blocking:
+
+```text
+Task executing blocking call
+    +
+Worker thread blocked
+    =
+other async tasks may stall ❌
+```
+
+## Core takeaway
+
+> **`async fn` does not magically make synchronous code non-blocking. A blocking operation inside an async task still blocks the runtime worker polling that task. A properly asynchronous `.await` can suspend the task, return control to the executor, and leave the worker available to execute other runnable tasks.**
+
+And for loops:
+
+> **An infinite async loop is not inherently a problem. The important question is whether the task regularly yields control back to the executor.**
+
+`slow_task` blocks the runtime's only OS worker inside `std::thread::sleep`. A poll is ordinary
+synchronous execution, so the executor cannot regain control until that call returns. The ticker's
+`.await` is helpful: its pending timer lets the task yield.
+
+Extra runtime workers may hide this instance of the stall, but each blocking call still consumes an
+async worker and can exhaust the pool under load. Use a non-blocking runtime timer when the duration
+is waiting. Move unavoidable blocking or CPU-heavy work to a dedicated blocking or CPU-oriented pool
+and await its result.

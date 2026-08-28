@@ -14,6 +14,7 @@
 /.github/
 /.agents/
 /.codex/
+/.async-lab/
 /Cargo.lock
 /Cargo.toml
 /rust-toolchain.toml
@@ -22,3 +23,5 @@
 /LICENSE
 /res/
 /README.md
+/AGENTS.md
+/*.excalidraw

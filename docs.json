@@ -75,7 +75,8 @@
       {
         "group": "Solutions",
         "pages": [
-          "docs/solutions/00-async-mental-model"
+          "docs/solutions/00-async-mental-model",
+          "docs/solutions/00-04-debug-frozen-ticker"
         ]
       },
       {
