@@ -85,7 +85,7 @@ NN-chapter/
 ## Code and documentation synchronization
 
 - Numbered chapter crates contain code, experiments, checks, and reference solutions.
-- `docs/` mirrors the curriculum for Mintlify. Update the relevant MDX page and `docs/docs.json`
+- `docs/` mirrors the curriculum for Mintlify. Update the relevant MDX page and root `docs.json`
   navigation whenever a meaningful lesson or exercise surface is added.
 - Mark incomplete content as `Planned` or otherwise state its exact status.
 - A lesson is not finished until its code and documentation agree.
@@ -116,5 +116,5 @@ Lesson 0 checkers support `rustc --cfg reference_solution` for this maintenance 
 an equivalent non-learner path for future checks so the reference can be tested without overwriting
 the starter.
 
-Run `mint validate` from `docs/` after documentation or navigation changes. Mintlify validation is
+Run `mint validate` from the repository root after documentation or navigation changes. Mintlify validation is
 not a substitute for browser-based visual verification; report those separately.

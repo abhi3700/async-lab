@@ -1,0 +1,289 @@
+---
+title: "Tokio intervals and periodic work"
+description: "Understand tick scheduling, sequential and overlapping work, missed ticks, and the difference between interval and sleep."
+---
+
+`tokio::time::Interval` represents a repeating schedule. Calling `tick().await` waits until the next
+scheduled instant is available; it does not start work, create a task, or make loop iterations overlap.
+
+<Info>
+  `tokio::time::interval(period)` produces its first tick immediately. Later ticks follow the selected
+  period and missed-tick policy.
+</Info>
+
+## Quick start
+
+```rust
+use std::time::Duration;
+use tokio::time::{self, MissedTickBehavior};
+
+let mut interval = time::interval(Duration::from_secs(3));
+interval.set_missed_tick_behavior(MissedTickBehavior::Skip);
+
+loop {
+    let scheduled_at = interval.tick().await;
+    do_work(scheduled_at).await;
+}
+```
+
+This loop has one owner and one control-flow path. It cannot request the next tick until
+`do_work(...).await` finishes.
+
+```text
+tick becomes available
+        ↓
+tick().await returns
+        ↓
+do_work().await
+        ↓
+work completes
+        ↓
+request the next tick
+```
+
+<Warning>
+  The first call to `tick().await` is immediately ready. Use `interval_at` when the first execution
+  should happen one full period later.
+</Warning>
+
+```rust
+use std::time::Duration;
+use tokio::time::{self, Instant};
+
+let period = Duration::from_secs(3);
+let first_tick = Instant::now() + period;
+let mut interval = time::interval_at(first_tick, period);
+```
+
+## What `tick().await` does internally
+
+When the next deadline is still in the future, polling `tick()` returns `Pending` and arranges for the
+task to be woken when the timer becomes ready.
+
+```text
+timer deadline expires
+        ↓
+Tokio timer driver observes it
+        ↓
+registered waker makes the task runnable
+        ↓
+scheduler selects the task
+        ↓
+executor polls the task again
+        ↓
+tick().await returns the scheduled Instant
+```
+
+The waiting task does not occupy an OS worker thread. Synchronous or CPU-heavy work performed after
+the tick can still occupy that worker until it returns or reaches a yielding `.await` point.
+
+## Sequential versus overlapping work
+
+`interval` controls when ticks become available. Your control flow determines whether work overlaps.
+
+<Tabs>
+  <Tab title="Sequential">
+    Await the work inside the loop:
+
+    ```rust
+    loop {
+        interval.tick().await;
+        do_work().await;
+    }
+    ```
+
+    Each iteration must finish before the next one begins.
+
+    ```text
+    tick 0s  ── work #1 ──► done
+                             tick 3s ── work #2 ──► done
+    ```
+  </Tab>
+
+  <Tab title="Overlapping">
+    Spawning explicitly allows multiple task lifetimes to overlap:
+
+    ```rust
+    loop {
+        interval.tick().await;
+
+        tokio::spawn(async {
+            do_work().await;
+        });
+    }
+    ```
+
+    If work takes five seconds and ticks are three seconds apart, more than one spawned task can
+    exist at once.
+
+    ```text
+    0s  work #1 ─────────────►
+    3s        work #2 ─────────────►
+    6s              work #3 ─────────────►
+    ```
+  </Tab>
+</Tabs>
+
+<Warning>
+  `tokio::spawn` permits concurrency; it does not provide a concurrency limit, backpressure, or task
+  supervision. A production loop should bound in-flight work and decide whether overload should wait,
+  skip the new run, replace stale work, or cancel an older run.
+</Warning>
+
+Spawning also does not guarantee parallel execution. Parallelism depends on the runtime flavor,
+available worker threads, readiness, scheduling, and whether the work itself can run in parallel.
+
+## When work is slower than the period
+
+Assume ticks are scheduled every three seconds but one iteration takes five seconds:
+
+```text
+scheduled ticks:  0s ─── 3s ─── 6s ─── 9s ─── 12s
+
+task:             0s ├──── work #1 ────┤ 5s
+                                             ↓
+                                      calls tick() again
+```
+
+The tick scheduled for `3s` does not spawn another copy of the work. When the task finally calls
+`tick()` at `5s`, the deadline is already in the past, so that call may complete immediately.
+
+<Info>
+  Missed-tick behavior controls which deadline follows a delayed call to `tick()`. It does not change
+  the sequential loop into concurrent work.
+</Info>
+
+## Missed-tick behavior
+
+Tokio offers three policies through `MissedTickBehavior`:
+
+| Policy | Original schedule alignment | What happens after missed ticks |
+| --- | --- | --- |
+| `Burst` | Preserved | Returns outstanding scheduled ticks as quickly as subsequent `tick()` calls request them. |
+| `Delay` | Reset after a miss | Schedules future ticks one period from when the missed tick was detected. |
+| `Skip` | Preserved | Discards intermediate missed deadlines and moves to the next future multiple of the period. |
+
+<Tabs>
+  <Tab title="Burst">
+    `Burst` is the default. It preserves every scheduled instant, so repeated calls to `tick()` can
+    return immediately until the interval catches up.
+
+    ```rust
+    interval.set_missed_tick_behavior(MissedTickBehavior::Burst);
+    ```
+
+    Choose it only when processing every scheduled occurrence is meaningful and the resulting
+    catch-up work is safe.
+  </Tab>
+
+  <Tab title="Delay">
+    `Delay` abandons alignment with the original start after a miss. Once the missed tick is
+    returned, the next deadline is one full period after the miss was detected.
+
+    ```rust
+    interval.set_missed_tick_behavior(MissedTickBehavior::Delay);
+    ```
+
+    This is useful when regular spacing after a delay matters more than the original wall-clock
+    schedule.
+  </Tab>
+
+  <Tab title="Skip">
+    `Skip` keeps alignment with the original schedule but discards intermediate missed deadlines.
+
+    ```rust
+    interval.set_missed_tick_behavior(MissedTickBehavior::Skip);
+    ```
+
+    This often fits polling or monitoring loops where only a fresh observation matters.
+  </Tab>
+</Tabs>
+
+<Warning>
+  `Skip` prevents replaying every historical tick, but it does not promise a full-period pause after
+  slow work. If every iteration takes longer than the period, the next tick can still be overdue and
+  therefore immediately ready.
+</Warning>
+
+## `interval` versus `sleep`
+
+Both APIs wait asynchronously, but they encode different schedules.
+
+<Tabs>
+  <Tab title="Fixed schedule with interval">
+    ```rust
+    let mut interval = time::interval(Duration::from_secs(3));
+
+    loop {
+        interval.tick().await;
+        do_work().await;
+    }
+    ```
+
+    Time spent doing work counts toward the next scheduled tick. If the work consumes one second,
+    the next tick may require only about two more seconds of waiting.
+
+    ```text
+    scheduled: 0s ─── 3s ─── 6s ─── 9s
+               work    work    work    work
+    ```
+  </Tab>
+
+  <Tab title="Fixed delay with sleep">
+    ```rust
+    loop {
+        time::sleep(Duration::from_secs(3)).await;
+        do_work().await;
+    }
+    ```
+
+    The full delay begins only after control reaches `sleep` again. With one second of work, starts
+    occur roughly four seconds apart.
+
+    ```text
+    0s ── sleep ── 3s work 4s ── sleep ── 7s work 8s
+    ```
+  </Tab>
+</Tabs>
+
+| Requirement | Prefer |
+| --- | --- |
+| Stay aligned to a repeating schedule | `interval` |
+| Wait a full duration after the previous run finishes | `sleep` in the loop |
+| Discard stale polling opportunities | `interval` with `Skip` |
+| Re-anchor after a missed tick | `interval` with `Delay` |
+| Process every missed scheduled occurrence | `interval` with `Burst`, with explicit capacity limits |
+
+## Common misconceptions
+
+| Misconception | Accurate model |
+| --- | --- |
+| “A tick starts the work.” | A tick only makes `tick().await` ready; the surrounding task then continues. |
+| “Each tick creates a task.” | Tasks are created only when code explicitly spawns them. |
+| “The loop is concurrent because it uses `.await`.” | Awaiting inline keeps loop iterations sequential. |
+| “`Skip` always waits before the next run.” | An already-overdue tick may return immediately. |
+| “Spawning makes every run parallel.” | Spawning permits overlapping task lifetimes; actual parallelism is runtime-dependent. |
+| “Async waiting blocks a worker thread.” | A pending timer yields the worker; synchronous work can still block it. |
+
+## Design checklist
+
+Before building a periodic loop, answer:
+
+1. Should the first run happen immediately or after one period?
+2. Is the schedule anchored, or should each delay begin after work finishes?
+3. If a tick is missed, should the program catch up, re-anchor, or skip stale deadlines?
+4. May iterations overlap?
+5. If they may overlap, what bounds the number of in-flight tasks?
+6. Who observes failures and shuts spawned tasks down?
+7. Is the work asynchronous waiting, blocking I/O, or CPU-heavy computation?
+
+<Tip>
+  Treat timer policy and concurrency policy as separate decisions. `Interval` answers when a tick is
+  available; your task structure answers what happens after that tick.
+</Tip>
+
+## API references
+
+- [`tokio::time::interval`](https://docs.rs/tokio/latest/tokio/time/fn.interval.html)
+- [`tokio::time::Interval`](https://docs.rs/tokio/latest/tokio/time/struct.Interval.html)
+- [`tokio::time::MissedTickBehavior`](https://docs.rs/tokio/latest/tokio/time/enum.MissedTickBehavior.html)

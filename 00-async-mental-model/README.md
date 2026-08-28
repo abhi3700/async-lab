@@ -14,5 +14,5 @@ Establish the vocabulary used throughout the course before introducing `Future`.
 ## Exercises
 
 Complete the [Lesson 0 exercises](exercises.md) before opening the
-[separate solution guide](solution.md). These are reasoning exercises on purpose: Lesson 0 builds the
-model needed to understand the code introduced in Lesson 1.
+[separate solution guide](solution.md). Each exercise combines written reasoning with an auto-checked
+Rust companion: Lesson 0 builds the model needed to understand the code introduced in Lesson 1.

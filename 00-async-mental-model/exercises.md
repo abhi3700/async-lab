@@ -7,8 +7,8 @@ Do not open [`solution.md`](solution.md) until you have attempted all six exerci
 
 ## Auto-checked Rust drills
 
-Exercises 0.1–0.3 also have small Rust versions under [`exercises/`](exercises). From the repository
-root, run:
+All six exercises also have small Rust companions under [`exercises/`](exercises). From the
+repository root, run:
 
 ```bash
 cargo run
@@ -18,8 +18,9 @@ The CLI checks the next incomplete file immediately, watches it for saved change
 a failed check, and advances when the behavioral tests pass. Reference implementations live under
 [`solutions/`](solutions); keep them closed until you finish your attempt.
 
-Exercises 0.4–0.6 remain written reasoning exercises because their explanations matter more than one
-machine-checkable answer.
+The Rust checkers validate each exercise's core invariants, but they do not replace the written
+reasoning. Complete both parts: equivalent explanations can be correct even when they cannot be
+graded mechanically.
 
 ## 0.1 — Classify the actors
 
@@ -81,6 +82,8 @@ Then explain why “100 concurrent tasks” does not imply “100 threads.”
 
 ## 0.4 — Debug the frozen ticker
 
+CLI companion: [`exercises/00_04_debug_frozen_ticker.rs`](exercises/00_04_debug_frozen_ticker.rs)
+
 Assume this pseudocode runs on a current-thread async runtime:
 
 ```rust
@@ -123,6 +126,8 @@ Answer:
 
 ## 0.5 — Extend a one-worker service
 
+CLI companion: [`exercises/00_05_one_worker_service.rs`](exercises/00_05_one_worker_service.rs)
+
 Design a service with:
 
 - one runtime worker thread;
@@ -143,6 +148,8 @@ Then answer:
 5. What architectural boundary would you introduce for that parsing work?
 
 ## 0.6 — Correct the mental model
+
+CLI companion: [`exercises/00_06_correct_mental_model.rs`](exercises/00_06_correct_mental_model.rs)
 
 Each statement is wrong or dangerously incomplete. Rewrite it accurately in one or two sentences.
 

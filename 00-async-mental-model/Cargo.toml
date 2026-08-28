@@ -26,5 +26,23 @@ path = "exercises/00_03_concurrency_or_parallelism.rs"
 test = false
 bench = false
 
+[[bin]]
+name = "exercise-00-04-debug-frozen-ticker"
+path = "exercises/00_04_debug_frozen_ticker.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "exercise-00-05-one-worker-service"
+path = "exercises/00_05_one_worker_service.rs"
+test = false
+bench = false
+
+[[bin]]
+name = "exercise-00-06-correct-mental-model"
+path = "exercises/00_06_correct_mental_model.rs"
+test = false
+bench = false
+
 [lints]
 workspace = true

@@ -9,12 +9,13 @@ occupied**.
 
 ## Auto-checked Rust drills
 
-Exercises 0.1–0.3 have Rust starter files in `00-async-mental-model/exercises/`. Run `cargo run` from
+All six exercises have Rust starter files in `00-async-mental-model/exercises/`. Run `cargo run` from
 the repository root to check and watch the next incomplete file. Each starter has a dedicated
 behavioral checker, an optional hint, and a separate reference implementation.
 
-Exercises 0.4–0.6 remain written exercises because the quality of the explanation is part of the
-answer. See the [exercise runner guide](/docs/contributing/exercise-runner) for commands and file layout.
+The checkers validate core invariants but do not replace the written reasoning. Complete both parts;
+equivalent explanations can be correct even when they cannot be graded mechanically. See the
+[exercise runner guide](/docs/contributing/exercise-runner) for commands and file layout.
 
 ## 0.1 — Classify the actors
 
@@ -68,6 +69,8 @@ Why do 100 concurrent tasks not imply 100 threads?
 
 ## 0.4 — Debug the frozen ticker
 
+CLI companion: `00-async-mental-model/exercises/00_04_debug_frozen_ticker.rs`
+
 Assume this pseudocode runs on a current-thread async runtime:
 
 ```rust
@@ -93,6 +96,8 @@ Give one fix for waiting and one for unavoidable blocking or CPU-heavy work.
 
 ## 0.5 — Extend a one-worker service
 
+CLI companion: `00-async-mental-model/exercises/00_05_one_worker_service.rs`
+
 Design a service with one runtime worker, a one-second timer, 1,000 mostly-idle TCP connections, one
 task per connection, and a reactor watching timers and sockets. Use all seven terms from Exercise
 0.1.
@@ -102,6 +107,8 @@ queue, and what happens if one connection performs 500 ms of uninterrupted CPU p
 that parsing move, and how should the new boundary be bounded?
 
 ## 0.6 — Correct the mental model
+
+CLI companion: `00-async-mental-model/exercises/00_06_correct_mental_model.rs`
 
 Rewrite each statement accurately:
 

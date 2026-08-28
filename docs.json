@@ -77,6 +77,12 @@
         "pages": [
           "docs/solutions/00-async-mental-model"
         ]
+      },
+      {
+        "group": "References",
+        "pages": [
+          "docs/references/miscellaneous"
+        ]
       }
     ]
   }
